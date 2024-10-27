@@ -24,6 +24,18 @@ class HomeView extends GetView<HomeController> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Welcome text with username
+                Obx(() {
+                  return Text(
+                    'Welcome, ${controller.userName.value}!',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: primaryColor,
+                    ),
+                  );
+                }),
+                const SizedBox(height: 20),
                 const HomeAppbar(),
                 const SizedBox(height: 20),
                 const HomeSearchBar(),
@@ -75,8 +87,7 @@ class HomeView extends GetView<HomeController> {
                         const SizedBox(height: 20),
 
                         // Categories and Quick & Fast Section combined in PreviewQuickFast
-                        // Pass currentCategory to PreviewQuickFast
-                Obx(() => PreviewQuickFast(currentCategory: controller.currentCategory.value)),
+                        Obx(() => PreviewQuickFast(currentCategory: controller.currentCategory.value)),
                       ],
                     );
                   }
