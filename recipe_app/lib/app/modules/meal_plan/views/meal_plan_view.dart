@@ -25,7 +25,8 @@ class _MealPlanViewState extends State<MealPlanView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Meal Plan', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Meal Plan',
+            style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
         leading: selectedMealData != null
             ? IconButton(
@@ -53,6 +54,10 @@ class _MealPlanViewState extends State<MealPlanView> {
 
         return _buildMealRecommendationsView();
       }),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _addNewMeal(),
+        child: const Icon(Icons.add),
+      ),
     );
   }
 
@@ -69,7 +74,10 @@ class _MealPlanViewState extends State<MealPlanView> {
             children: [
               Text(
                 day,
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.deepOrange),
+                style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.deepOrange),
               ),
               const SizedBox(height: 10),
               GridView.builder(
@@ -86,7 +94,8 @@ class _MealPlanViewState extends State<MealPlanView> {
                   var meal = meals[index];
                   return GestureDetector(
                     onTap: () async {
-                      var mealDetail = await controller.fetchMealDetail(meal['idMeal']);
+                      var mealDetail =
+                          await controller.fetchMealDetail(meal['idMeal']);
                       setState(() {
                         selectedMealData = mealDetail;
                       });
@@ -99,20 +108,31 @@ class _MealPlanViewState extends State<MealPlanView> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          ClipRRect(
-                            borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
-                            child: Image.network(
-                              meal['strMealThumb'],
-                              height: 160,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                            ),
+                          Stack(
+                            children: [
+                              ClipRRect(
+                                borderRadius: const BorderRadius.vertical(
+                                    top: Radius.circular(15)),
+                                child: Image.network(
+                                  meal['strMealThumb'],
+                                  height: 160,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                              Positioned(
+                                top: 5,
+                                right: 5,
+                                child: _buildThreeDotMenu(day, meal),
+                              ),
+                            ],
                           ),
                           Padding(
                             padding: const EdgeInsets.all(10.0),
                             child: Text(
                               meal['strMeal'],
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.bold),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -131,8 +151,204 @@ class _MealPlanViewState extends State<MealPlanView> {
     );
   }
 
+  Widget _buildThreeDotMenu(String day, Map<String, dynamic> meal) {
+    return PopupMenuButton<String>(
+      icon: const Icon(Icons.more_vert, color: Colors.white),
+      onSelected: (String result) {
+        switch (result) {
+          case 'edit':
+            _editMeal(day, meal);
+            break;
+          case 'delete':
+            _deleteMeal(day, meal);
+            break;
+        }
+      },
+      itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+        const PopupMenuItem<String>(
+          value: 'edit',
+          child: Text('Edit'),
+        ),
+        const PopupMenuItem<String>(
+          value: 'delete',
+          child: Text('Delete'),
+        ),
+      ],
+    );
+  }
+
+  void _editMeal(String day, Map<String, dynamic> meal) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        Map<String, dynamic> selectedMeal = Map.from(meal);
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            return AlertDialog(
+              title: const Text('Edit Meal'),
+              content: DropdownButton<String>(
+                value: selectedMeal['idMeal'],
+                items:
+                    controller.availableMeals.map((Map<String, dynamic> meal) {
+                  return DropdownMenuItem<String>(
+                    value: meal['idMeal'],
+                    child: Text(meal['strMeal']),
+                  );
+                }).toList(),
+                onChanged: (String? newValue) {
+                  if (newValue != null) {
+                    setState(() {
+                      selectedMeal = controller.availableMeals
+                          .firstWhere((meal) => meal['idMeal'] == newValue);
+                    });
+                  }
+                },
+              ),
+              actions: <Widget>[
+                TextButton(
+                  child: const Text('Cancel'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+                TextButton(
+                  child: const Text('Save'),
+                  onPressed: () {
+                    controller.updateMeal(
+                        day,
+                        controller.mealsByDay[day]!.indexOf(meal),
+                        selectedMeal);
+                    Navigator.of(context).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content: Text('Meal updated successfully')),
+                    );
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _deleteMeal(String day, Map<String, dynamic> meal) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Delete Meal'),
+          content: Text('Are you sure you want to delete ${meal['strMeal']}?'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Delete'),
+              onPressed: () {
+                controller.deleteMeal(day, meal['idMeal']);
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Meal deleted successfully')),
+                );
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _addNewMeal() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        String selectedDay = controller.mealsByDay.keys.first;
+        Map<String, dynamic>? selectedMeal;
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            return AlertDialog(
+              title: const Text('Add New Meal'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  DropdownButton<String>(
+                    value: selectedDay,
+                    items: controller.mealsByDay.keys.map((String day) {
+                      return DropdownMenuItem<String>(
+                        value: day,
+                        child: Text(day),
+                      );
+                    }).toList(),
+                    onChanged: (String? newValue) {
+                      if (newValue != null) {
+                        setState(() {
+                          selectedDay = newValue;
+                        });
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButton<String>(
+                    value: selectedMeal?['idMeal'],
+                    hint: const Text('Select a meal'),
+                    items: controller.availableMeals
+                        .map((Map<String, dynamic> meal) {
+                      return DropdownMenuItem<String>(
+                        value: meal['idMeal'],
+                        child: Text(meal['strMeal']),
+                      );
+                    }).toList(),
+                    onChanged: (String? newValue) {
+                      if (newValue != null) {
+                        setState(() {
+                          selectedMeal = controller.availableMeals
+                              .firstWhere((meal) => meal['idMeal'] == newValue);
+                        });
+                      }
+                    },
+                  ),
+                ],
+              ),
+              actions: <Widget>[
+                TextButton(
+                  child: const Text('Cancel'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+                TextButton(
+                  child: const Text('Add'),
+                  onPressed: () {
+                    if (selectedMeal != null) {
+                      controller.addMeal(selectedDay, selectedMeal!);
+                      Navigator.of(context).pop();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text('Meal added successfully')),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Please select a meal')),
+                      );
+                    }
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   Widget _buildMealDetailView() {
-    List<String> instructions = selectedMealData?['strInstructions']?.split('\n') ?? [];
+    List<String> instructions =
+        selectedMealData?['strInstructions']?.split('\n') ?? [];
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
@@ -151,19 +367,28 @@ class _MealPlanViewState extends State<MealPlanView> {
           const SizedBox(height: 16),
           Text(
             selectedMealData?['strMeal'] ?? 'Meal Detail',
-            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.deepOrange),
+            style: const TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.bold,
+                color: Colors.deepOrange),
           ),
           const SizedBox(height: 8),
           const Text(
             'Ingredients:',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
+            style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87),
           ),
           const SizedBox(height: 8),
           _buildIngredientsList(),
           const SizedBox(height: 16),
           const Text(
             'Instructions:',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
+            style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87),
           ),
           const SizedBox(height: 10),
           _buildInstructionsList(instructions),
@@ -188,7 +413,7 @@ class _MealPlanViewState extends State<MealPlanView> {
           padding: const EdgeInsets.symmetric(vertical: 4.0),
           child: Text(
             '• $ingredient',
-            style: const TextStyle(fontSize: 16, color: Colors.black), // Warna hitam untuk bahan
+            style: const TextStyle(fontSize: 16, color: Colors.black),
           ),
         );
       }).toList(),
@@ -223,12 +448,15 @@ class _MealPlanViewState extends State<MealPlanView> {
               children: [
                 Text(
                   '${index + 1}. ',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black), // Warna hitam untuk nomor instruksi
+                  style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black),
                 ),
                 Expanded(
                   child: Text(
                     instructions[index],
-                    style: const TextStyle(fontSize: 16, color: Colors.black), // Warna hitam untuk instruksi
+                    style: const TextStyle(fontSize: 16, color: Colors.black),
                   ),
                 ),
               ],
