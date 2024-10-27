@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:recipe_app/app/modules/home/controllers/home_controller.dart';
+import 'package:recipe_app/app/modules/home/controllers/search_recipe_app_controller.dart'; // Import SearchRecipeAppController
 import 'package:recipe_app/app/modules/home/views/card_menu.dart'; // Menggunakan CardMenu
 import 'package:recipe_app/app/modules/home/views/home_appbar.dart';
 import 'package:recipe_app/app/modules/home/views/home_search_bar.dart';
 import 'package:recipe_app/app/modules/home/views/preview_quick_fast.dart'; // Combine CategoryView and QuickAndFastList
-import 'package:recipe_app/app/modules/home/controllers/home_controller.dart';
 import 'package:recipe_app/app/widgets/custom_bottom_nav_bar.dart';
-import 'package:recipe_app/app/modules/home/controllers/search_recipe_app_controller.dart'; // Import SearchRecipeAppController
 
 class HomeView extends GetView<HomeController> {
   const HomeView({Key? key}) : super(key: key);

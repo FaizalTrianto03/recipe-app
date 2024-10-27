@@ -41,46 +41,47 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyAelk79agiDNeExRPL76T8_In9INRlTQlg',
-    appId: '1:52952795499:web:e03a35a520c65fac03a42e',
-    messagingSenderId: '52952795499',
-    projectId: 'modul3mobile-b65b2',
-    authDomain: 'modul3mobile-b65b2.firebaseapp.com',
-    storageBucket: 'modul3mobile-b65b2.appspot.com',
+    apiKey: 'AIzaSyBp-Gu2VeawbXllPNPeTtzyScUEQojFH6k',
+    appId: '1:16880438247:web:4cbf6891cb707b17894b42',
+    messagingSenderId: '16880438247',
+    projectId: 'recipeapp-fd669',
+    authDomain: 'recipeapp-fd669.firebaseapp.com',
+    storageBucket: 'recipeapp-fd669.appspot.com',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyCcMaouNRsehWDpBvLt1HtMwXjZ32d9z6M',
-    appId: '1:52952795499:android:37fa86186b2ac6a603a42e',
-    messagingSenderId: '52952795499',
-    projectId: 'modul3mobile-b65b2',
-    storageBucket: 'modul3mobile-b65b2.appspot.com',
+    apiKey: 'AIzaSyDJ0wBmONTV6RFesmxaotaRe_E33GXREig',
+    appId: '1:16880438247:android:3d295d4c602cf207894b42',
+    messagingSenderId: '16880438247',
+    projectId: 'recipeapp-fd669',
+    storageBucket: 'recipeapp-fd669.appspot.com',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyB43595cj6a2yn-D48mAqX6X6b9Rlz5HV0',
-    appId: '1:52952795499:ios:fdfae439b406363c03a42e',
-    messagingSenderId: '52952795499',
-    projectId: 'modul3mobile-b65b2',
-    storageBucket: 'modul3mobile-b65b2.appspot.com',
+    apiKey: 'AIzaSyBsPHMAbJojDpGfY6TypWy5V54xkD8OxD0',
+    appId: '1:16880438247:ios:df85a85560bfae8f894b42',
+    messagingSenderId: '16880438247',
+    projectId: 'recipeapp-fd669',
+    storageBucket: 'recipeapp-fd669.appspot.com',
     iosBundleId: 'com.example.recipeApp',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyB43595cj6a2yn-D48mAqX6X6b9Rlz5HV0',
-    appId: '1:52952795499:ios:fdfae439b406363c03a42e',
-    messagingSenderId: '52952795499',
-    projectId: 'modul3mobile-b65b2',
-    storageBucket: 'modul3mobile-b65b2.appspot.com',
+    apiKey: 'AIzaSyBsPHMAbJojDpGfY6TypWy5V54xkD8OxD0',
+    appId: '1:16880438247:ios:df85a85560bfae8f894b42',
+    messagingSenderId: '16880438247',
+    projectId: 'recipeapp-fd669',
+    storageBucket: 'recipeapp-fd669.appspot.com',
     iosBundleId: 'com.example.recipeApp',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyAelk79agiDNeExRPL76T8_In9INRlTQlg',
-    appId: '1:52952795499:web:92f095db88dd1b9603a42e',
-    messagingSenderId: '52952795499',
-    projectId: 'modul3mobile-b65b2',
-    authDomain: 'modul3mobile-b65b2.firebaseapp.com',
-    storageBucket: 'modul3mobile-b65b2.appspot.com',
+    apiKey: 'AIzaSyBp-Gu2VeawbXllPNPeTtzyScUEQojFH6k',
+    appId: '1:16880438247:web:f9b58be3e5aa0c3e894b42',
+    messagingSenderId: '16880438247',
+    projectId: 'recipeapp-fd669',
+    authDomain: 'recipeapp-fd669.firebaseapp.com',
+    storageBucket: 'recipeapp-fd669.appspot.com',
   );
+
 }
