@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:recipe_app/app/modules/home/controllers/home_controller.dart';
-import 'package:recipe_app/app/modules/home/controllers/auth_controller.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:recipe_app/app/modules/home/controllers/auth_controller.dart';
+import 'package:recipe_app/app/modules/home/controllers/home_controller.dart';
 
 class CustomBottomNavBar extends StatelessWidget {
   final HomeController controller = Get.put(HomeController());
@@ -53,7 +53,7 @@ class CustomBottomNavBar extends StatelessWidget {
                 Get.toNamed('/upload');
                 break;
               case 3:
-                Get.toNamed('/mealplan');
+                Get.toNamed('/meal-plan');
                 break;
               case 4:
                 Get.toNamed('/profile');
