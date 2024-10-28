@@ -12,8 +12,7 @@ class MealPlanController extends GetxController {
   var mealsByDay = <String, List<Map<String, dynamic>>>{}.obs;
   var availableMeals = <Map<String, dynamic>>[].obs;
 
-  final String apiUrl =
-      'https://www.themealdb.com/api/json/v1/1/filter.php?c=Beef';
+  final String apiUrl = 'https://www.themealdb.com/api/json/v1/1/filter.php?c=Beef';
   late FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
 
   @override
@@ -41,7 +40,6 @@ class MealPlanController extends GetxController {
   void _setupFirebaseMessaging() {
     FirebaseMessaging messaging = FirebaseMessaging.instance;
 
-    // Request permission for iOS
     messaging.requestPermission(
       alert: true,
       badge: true,
@@ -61,14 +59,14 @@ class MealPlanController extends GetxController {
   void fetchMeals() async {
     isLoading(true);
     try {
+      // Fetch meals from API
       final response = await http.get(Uri.parse(apiUrl));
       if (response.statusCode == 200) {
         Map<String, dynamic> data = json.decode(response.body);
-        List<Map<String, dynamic>> meals =
-            List<Map<String, dynamic>>.from(data['meals']);
-
+        List<Map<String, dynamic>> meals = List<Map<String, dynamic>>.from(data['meals']);
         availableMeals.assignAll(meals);
 
+        // Organize meals by day of the week
         DateTime today = DateTime.now();
         List<String> daysOfWeek = [
           'Sunday',
@@ -89,8 +87,9 @@ class MealPlanController extends GetxController {
           mealsByDay[day]?.add(meals[i]);
         }
 
+        // Schedule notifications and sync data to Firebase
         _scheduleDailyNotifications();
-        _saveMealsToFirestore(mealsByDay);
+        await _saveMealsToFirestore(mealsByDay);
       } else {
         print("Failed to fetch meals: ${response.statusCode}");
       }
@@ -101,52 +100,74 @@ class MealPlanController extends GetxController {
     }
   }
 
-  Future<void> _saveMealsToFirestore(
-      Map<String, List<Map<String, dynamic>>> mealsByDay) async {
+  Future<void> _saveMealsToFirestore(Map<String, List<Map<String, dynamic>>> mealsByDay) async {
     final firestore = FirebaseFirestore.instance;
-    mealsByDay.forEach((day, meals) async {
+    for (var day in mealsByDay.keys) {
       await firestore.collection('meals').doc(day).set({
-        'meals': meals,
+        'meals': mealsByDay[day],
       });
-    });
+    }
+  }
+
+  Future<void> fetchMealsFromFirestore() async {
+    final firestore = FirebaseFirestore.instance;
+    isLoading(true);
+    try {
+      final daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      mealsByDay.clear();
+
+      for (var day in daysOfWeek) {
+        final snapshot = await firestore.collection('meals').doc(day).get();
+        if (snapshot.exists) {
+          mealsByDay[day] = List<Map<String, dynamic>>.from(snapshot.data()!['meals']);
+        } else {
+          mealsByDay[day] = [];
+        }
+      }
+    } catch (e) {
+      print("Error fetching meals from Firebase: $e");
+    } finally {
+      isLoading(false);
+    }
   }
 
   Future<Map<String, dynamic>?> fetchMealDetail(String mealId) async {
-    final response = await http.get(Uri.parse(
-        'https://www.themealdb.com/api/json/v1/1/lookup.php?i=$mealId'));
-    if (response.statusCode == 200) {
-      Map<String, dynamic> data = json.decode(response.body);
-      if (data['meals'] != null && data['meals'].isNotEmpty) {
-        return data['meals'][0];
+    try {
+      final response = await http.get(Uri.parse('https://www.themealdb.com/api/json/v1/1/lookup.php?i=$mealId'));
+      if (response.statusCode == 200) {
+        Map<String, dynamic> data = json.decode(response.body);
+        return data['meals']?.first;
       }
+    } catch (e) {
+      print("Error fetching meal details: $e");
     }
     return null;
   }
 
-  void addMeal(String day, Map<String, dynamic> meal) {
+  Future<void> addMeal(String day, Map<String, dynamic> meal) async {
     if (mealsByDay.containsKey(day)) {
       mealsByDay[day]?.add(meal);
       _showNotification("Meal Plan Update", "New meal added to $day");
-      _saveMealsToFirestore(mealsByDay); // Update Firestore
-      update();
+      await _saveMealsToFirestore(mealsByDay);
+      await fetchMealsFromFirestore();
     }
   }
 
-  void updateMeal(String day, int index, Map<String, dynamic> updatedMeal) {
+  Future<void> updateMeal(String day, int index, Map<String, dynamic> updatedMeal) async {
     if (mealsByDay.containsKey(day) && mealsByDay[day]!.length > index) {
       mealsByDay[day]?[index] = updatedMeal;
       _showNotification("Meal Plan Update", "Meal updated for $day");
-      _saveMealsToFirestore(mealsByDay); // Update Firestore
-      update();
+      await _saveMealsToFirestore(mealsByDay);
+      await fetchMealsFromFirestore();
     }
   }
 
-  void deleteMeal(String day, String mealId) {
+  Future<void> deleteMeal(String day, String mealId) async {
     if (mealsByDay.containsKey(day)) {
       mealsByDay[day]?.removeWhere((meal) => meal['idMeal'] == mealId);
       _showNotification("Meal Plan Update", "Meal deleted from $day");
-      _saveMealsToFirestore(mealsByDay); // Update Firestore
-      update();
+      await _saveMealsToFirestore(mealsByDay);
+      await fetchMealsFromFirestore();
     }
   }
 
@@ -163,8 +184,7 @@ class MealPlanController extends GetxController {
 
     mealsByDay.forEach((day, meals) async {
       int dayIndex = _getDayIndex(day);
-      String mealName =
-          meals.isNotEmpty ? meals[0]['strMeal'] : "No meal scheduled";
+      String mealName = meals.isNotEmpty ? meals[0]['strMeal'] : "No meal scheduled";
       await flutterLocalNotificationsPlugin.zonedSchedule(
         dayIndex,
         "Meal Plan for $day",
@@ -172,8 +192,7 @@ class MealPlanController extends GetxController {
         _nextInstanceOfDay(dayIndex),
         platformChannelSpecifics,
         androidAllowWhileIdle: true,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
+        uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
         matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
       );
     });
@@ -201,8 +220,7 @@ class MealPlanController extends GetxController {
   }
 
   tz.TZDateTime _nextInstanceOfDay(int day) {
-    tz.TZDateTime scheduledDate =
-        tz.TZDateTime.now(tz.local).add(const Duration(days: 1));
+    tz.TZDateTime scheduledDate = tz.TZDateTime.now(tz.local).add(const Duration(days: 1));
     while (scheduledDate.weekday != day + 1) {
       scheduledDate = scheduledDate.add(const Duration(days: 1));
     }
