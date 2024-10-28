@@ -1,24 +1,26 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 
 class ProfileController extends GetxController {
   final picker = ImagePicker();
-  RxString profileImage = ''.obs; // Menyimpan URL gambar profil
+  RxString profileImage = ''.obs;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseStorage _storage = FirebaseStorage.instance;
 
   @override
   void onInit() {
     super.onInit();
-    fetchProfileImage(); // Mengambil gambar profil saat inisialisasi
+    fetchProfileImage(); 
   }
 
-  // Mengambil gambar profil dari Firestore
   Future<void> fetchProfileImage() async {
-    // Ganti 'userId' dengan ID pengguna yang sesuai
     User? user = _auth.currentUser;
     if (user != null) {
       DocumentSnapshot doc = await _firestore.collection('users').doc(user.uid).get();
@@ -28,7 +30,6 @@ class ProfileController extends GetxController {
     }
   }
 
-  // Menampilkan dialog untuk memilih sumber gambar
   void showImageSourceDialog() {
     Get.defaultDialog(
       title: "Select Image Source",
@@ -37,14 +38,14 @@ class ProfileController extends GetxController {
           TextButton(
             onPressed: () {
               pickImage(ImageSource.camera);
-              Get.back(); // Menutup dialog
+              Get.back();
             },
             child: Text("Camera"),
           ),
           TextButton(
             onPressed: () {
               pickImage(ImageSource.gallery);
-              Get.back(); // Menutup dialog
+              Get.back();
             },
             child: Text("Gallery"),
           ),
@@ -53,18 +54,16 @@ class ProfileController extends GetxController {
     );
   }
 
-  // Memanggil dialog pemilihan gambar
   Future<void> pickProfileImage() async {
-    showImageSourceDialog(); // Panggil dialog untuk memilih sumber gambar
+    showImageSourceDialog();
   }
 
-  // Memilih gambar dari sumber yang ditentukan
   Future<void> pickImage(ImageSource source) async {
     try {
       final pickedFile = await picker.pickImage(source: source);
       if (pickedFile != null) {
-        String imageUrl = pickedFile.path; // Mendapatkan path gambar lokal
-        updateProfileImageUrl(imageUrl); // Memperbarui URL gambar profil di Firestore
+        String filePath = pickedFile.path;
+        await uploadProfileImageToStorage(filePath);
       } else {
         Get.snackbar('No Image Selected', 'Please select an image.');
       }
@@ -73,9 +72,26 @@ class ProfileController extends GetxController {
     }
   }
 
-  // Memperbarui URL gambar profil di Firestore
+  Future<void> uploadProfileImageToStorage(String filePath) async {
+    User? user = _auth.currentUser;
+    if (user != null) {
+      try {
+        Reference storageRef = _storage.ref().child('profileImages').child('${user.uid}.jpg');
+
+        UploadTask uploadTask = storageRef.putFile(File(filePath));
+
+        TaskSnapshot snapshot = await uploadTask;
+
+        String downloadUrl = await snapshot.ref.getDownloadURL();
+
+        await updateProfileImageUrl(downloadUrl);
+      } catch (e) {
+        Get.snackbar('Error', 'Failed to upload image: $e');
+      }
+    }
+  }
+
   Future<void> updateProfileImageUrl(String imageUrl) async {
-    // Ganti 'userId' dengan ID pengguna yang sesuai
     User? user = _auth.currentUser;
     if (user != null) {
       try {
@@ -91,7 +107,6 @@ class ProfileController extends GetxController {
     }
   }
 
-  // Menampilkan konfirmasi sebelum logout
   void confirmLogout() {
     Get.defaultDialog(
       title: "Logout Confirmation",
@@ -99,14 +114,14 @@ class ProfileController extends GetxController {
       actions: [
         TextButton(
           onPressed: () {
-            Get.back(); // Menutup dialog
+            Get.back();
           },
           child: Text("Cancel"),
         ),
         TextButton(
           onPressed: () {
             logout();
-            Get.back(); // Menutup dialog
+            Get.back();
           },
           child: Text("Logout"),
         ),
@@ -114,12 +129,10 @@ class ProfileController extends GetxController {
     );
   }
 
-  // Fungsi logout
   void logout() {
     try {
       _auth.signOut();
       Get.snackbar('Success', 'You have logged out successfully.');
-      // Navigasi ke halaman login jika diperlukan
       Get.offAllNamed('/login');
     } catch (e) {
       Get.snackbar('Error', 'Failed to logout: $e');
